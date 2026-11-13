@@ -194,7 +194,8 @@ $('#who').onclick=()=>{
   if(owner){key='';owner=false;sessionStorage.removeItem('ok');last='';poll()}else $('#dlg').showModal();
 };
 $('#cancel').onclick=()=>$('#dlg').close();
-$('#login').onsubmit=()=>{key=$('#k').value;sessionStorage.setItem('ok',key);$('#k').value='';last='';poll()};
+$('#login').onsubmit=async()=>{key=$('#k').value;sessionStorage.setItem('ok',key);$('#k').value='';last='';await poll();
+  if(!owner)alert(/belum bisa/.test($('#hint').textContent)?$('#hint').textContent:'Kunci bos salah, atau OWNER_KEY belum diatur di Vercel dan belum di-redeploy.')};
 fit();addEventListener('resize',fit);poll();setInterval(poll,4000);
 </script>
 </body>
