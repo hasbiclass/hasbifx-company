@@ -33,7 +33,7 @@ button.ghost{background:#e6ecfb;color:var(--navy)}button:focus-visible,input:foc
 [data-s="3"] .hat{border-radius:4px 4px 0 0}
 [data-s="3"] .head{background-image:linear-gradient(#111,#111);background-size:36px 9px;background-repeat:no-repeat;background-position:4px 17px}
 [data-s="4"] .hat{background:#fff;box-shadow:0 0 0 1px #d6dcef}
-.big{position:relative;flex:none;margin-top:44px}
+.big{position:relative;left:auto;bottom:auto;flex:none;margin:44px 8px 0 4px}
 .wiz{position:absolute;left:-4px;top:-42px;border-left:26px solid transparent;border-right:26px solid transparent;border-bottom:46px solid var(--blue)}
 .working .head{animation:type .5s steps(2) infinite}
 @keyframes type{50%{transform:translateY(2px)}}
@@ -45,7 +45,25 @@ details{margin:6px 2px;color:var(--mute);font-size:.9rem}summary{cursor:pointer}
 .ctl{display:flex;flex-direction:column;gap:6px;margin-top:8px}.ctl .row{display:flex;gap:6px}
 input,textarea{font:inherit;width:100%;padding:8px 10px;border:2px solid var(--line);border-radius:10px;color:var(--navy)}
 dialog{border:0;border-radius:18px;padding:20px;box-shadow:0 10px 40px #1b254733}
-@media (prefers-reduced-motion:reduce){.working .head{animation:none}}
+#wrap{width:100%;max-width:580px;margin:0 auto 18px}
+#scene{position:relative;width:580px;height:380px;transform-origin:0 0}
+#floor{position:absolute;left:90px;top:16px;width:400px;height:400px;transform-style:preserve-3d;transform:rotateX(60deg) rotateZ(-45deg)}
+.c{position:absolute;width:0;height:0;transform-style:preserve-3d}
+.c>i{position:absolute;left:0;top:0;transform-origin:0 0}
+.c>.t{width:var(--w);height:var(--d);background:var(--c);transform:translateZ(var(--h))}
+.c>.s{width:var(--w);height:var(--h);top:var(--d);background:color-mix(in srgb,var(--c),#000 14%);transform:rotateX(90deg)}
+.c>.w{width:var(--h);height:var(--d);background:color-mix(in srgb,var(--c),#000 28%);transform:rotateY(-90deg)}
+.c.e>.s{background:linear-gradient(#1b2547,#1b2547) 22% 50%/5px 6px no-repeat,linear-gradient(#1b2547,#1b2547) 70% 50%/5px 6px no-repeat,color-mix(in srgb,var(--c),#000 14%)}
+.c.sg>.s{background:linear-gradient(#111,#111) 50% 45%/86% 36% no-repeat,color-mix(in srgb,var(--c),#000 14%)}
+.glow>i{box-shadow:0 0 8px #6ea0ff}
+.ln{position:absolute;left:200px;top:198px;height:4px;background:#4a74e8;transform-origin:0 50%}
+.bob.work{animation:bob .5s steps(2) infinite}
+@keyframes bob{50%{translate:0 0 2px}}
+#tags{position:absolute;left:0;top:0}
+.tag{position:absolute;transform:translate(-50%,-100%);background:#fff;border-radius:99px;padding:3px 11px;font-size:12px;color:var(--navy);box-shadow:0 3px 0 var(--line);text-decoration:none;white-space:nowrap;z-index:2}
+.tag.boss{background:var(--blue);color:#fff}.tag.idle{color:var(--mute)}
+.tag.on:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#2fbf5b;margin-right:6px}
+@media (prefers-reduced-motion:reduce){.working .head,.bob.work{animation:none}}
 </style>
 </head>
 <body>
@@ -54,10 +72,8 @@ dialog{border:0;border-radius:18px;padding:20px;box-shadow:0 10px 40px #1b254733
   <button id="who" class="ghost">Masuk sebagai bos</button>
 </header>
 
-<section class="boss">
-  <div class="person big" data-s="0"><div class="wiz"></div><div class="head"></div><div class="body"></div></div>
-  <div><h2>Ruang bos</h2><p id="hint">Memuat kantor…</p></div>
-</section>
+<p id="hint">Memuat kantor…</p>
+<div id="wrap"><div id="scene"><div id="floor"></div><div id="tags"></div></div></div>
 
 <main class="rooms" id="rooms" aria-live="polite"></main>
 
@@ -90,7 +106,7 @@ function room(r,i,open){
   const info=h('div',{className:'info'},
     h('div',{},h('h2',{},r?r.name:'Ruang '+(i+1)),h('p',{},r?r.role:'Belum ada karyawan')),
     r&&h('span',{className:'chip'},working?'Sedang bekerja':'Santai'));
-  const el=h('article',{className:'room'},stage,info);
+  const el=h('article',{className:'room',id:'room-'+i},info);
   if(r&&r.log.length){
     const d=h('details',{open,'data-k':i},h('summary',{},'Riwayat kerja'),
       r.log.map(l=>h('div',{className:'log'},'Tugas: '+l.task+'\n\n'+l.result)));
@@ -119,6 +135,7 @@ function act(body){
 }
 
 function draw(s){
+  scene(s);
   const keep={},open=new Set(),focus=document.activeElement&&document.activeElement.name;
   document.querySelectorAll('#rooms [name]').forEach(i=>keep[i.name]=i.value);
   document.querySelectorAll('details[open]').forEach(d=>open.add(d.dataset.k));
@@ -130,9 +147,47 @@ function draw(s){
   $('#who').textContent=owner?'Keluar':'Masuk sebagai bos';
 }
 
+const T=100,P=[[150,15],[278,108],[229,258],[71,258],[22,108]],SC=['#2f5bd8','#1b2547','#3b4252','#2f5bd8','#e8ecf6'];
+function cube(x,y,z,w,d,hh,c,cl='',sb=''){
+  const e=h('div',{className:'c '+cl});
+  e.style.cssText=`left:${x}px;top:${y}px;translate:0 0 ${z}px;--c:${c};--w:${w}px;--d:${d}px;--h:${hh}px`;
+  const s=h('i',{className:'s'});if(sb)s.style.background=sb;
+  e.append(h('i',{className:'t'}),s,h('i',{className:'w'}));return e;
+}
+const grp=(cl,...k)=>{const e=h('div',{className:'c '+cl});e.style.cssText='left:0;top:0';e.append(...k);return e};
+function desk(ox,oy,oz,r,i,boss){
+  const w=r&&r.status==='working',B='#2f5bd8',o=(x,y,z,a,b,hh,col,cl,sb)=>cube(ox+x,oy+y,oz+z,a,b,hh,col,cl,sb);
+  const bits=[o(22,20,16,56,34,4,'#d9a66b'),o(24,22,0,4,30,16,'#b9854a'),o(72,22,0,4,30,16,'#b9854a'),
+    o(38,32,20,22,12,2,'#a8b3cf'),o(38,30,22,22,2,12,w?'#6ea0ff':'#1b2547',w?'glow':''),
+    o(80,78,0,10,10,7,'#d6dbe8'),o(78,76,7,14,14,12,'#4f9a5b')];
+  if(r||boss){
+    const st=boss?-1:i%5;
+    const hat=boss?[o(34,3,40,26,20,3,B),o(38,6,43,18,14,8,B),o(42,9,51,10,8,8,B),o(45,11,59,4,4,6,B)]:[
+      [o(36,5,38,22,18,4,B),o(34,9,28,3,8,8,B),o(57,9,28,3,8,8,B)],
+      [o(34,4,40,26,20,4,'#1b2547')],
+      [o(34,4,40,26,20,3,'#8b8f99'),o(38,7,43,18,12,5,'#8b8f99')],
+      [o(36,5,40,22,18,5,B),o(36,22,40,22,6,2,B)],
+      [o(35,5,40,24,19,7,'#fff')]][st];
+    bits.push(o(36,6,8,22,14,14,boss?B:SC[st]),grp('bob'+(w?' work':''),o(37,6,22,20,16,18,'#f0b48a','e'+(st===3?' sg':'')),...hat));
+  }
+  return bits;
+}
+const tag=(x,y,z,t,cl,i)=>{const a=x-200,b=y-200,p={className:'tag '+cl,style:`left:${290+.7071*(a+b)}px;top:${216+.3536*(b-a)-.866*z}px`};if(i!=null)p.href='#room-'+i;return h(i==null?'span':'a',p,t)};
+function scene(s){
+  $('#floor').replaceChildren(
+    cube(-8,-8,-12,416,416,12,'#eaf0fb'),
+    ...P.map(([x,y])=>{const dx=x+50-200,dy=y+50-200;return h('i',{className:'ln',style:`width:${Math.hypot(dx,dy)}px;transform:translateZ(1px) rotate(${Math.atan2(dy,dx)}rad)`})}),
+    cube(0,0,0,400,6,70,'#d4def2'),
+    cube(70,6,22,260,2,40,'#1b2547','','radial-gradient(circle,#6ea0ff 1.3px,transparent 1.8px) 0 0/7px 7px,#1b2547'),
+    cube(150,150,0,T,T,6,'#fff'),grp('',...desk(150,150,6,null,0,true)),
+    cube(360,360,0,12,12,8,'#d6dbe8'),cube(358,358,8,16,16,16,'#4f9a5b'),
+    ...s.rooms.map((r,i)=>{const[x,y]=P[i];return grp('',cube(x,y,0,T,T,2,r?'#dbe6fb':'#f6f8fd'),cube(x,y,2,T,4,24,'#cdd8f0'),cube(x+96,y,2,4,T,24,'#cdd8f0'),...desk(x,y,2,r,i))}));
+  $('#tags').replaceChildren(tag(200,162,84,'Bos','boss'),...s.rooms.map((r,i)=>tag(P[i][0]+47,P[i][1]+8,64,r?r.name:'Kosong',r?(r.status==='working'?'on':''):'idle',i)));
+}
+function fit(){const w=$('#wrap'),k=Math.min(1,w.clientWidth/580);$('#scene').style.transform='scale('+k+')';w.style.height=380*k+'px'}
 async function poll(){
   try{const s=await api();if(key&&!s.owner){key='';sessionStorage.removeItem('ok')}owner=s.owner;
-    const j=JSON.stringify(s);if(j!==last){last=j;draw(s)}}catch(e){$('#hint').textContent='Kantor belum bisa dimuat: '+e.message}
+    const j=JSON.stringify(s);if(j!==last){last=j;draw(s)}}catch(e){if(!last){last='x';owner=false;draw({rooms:Array(5).fill(null)})}$('#hint').textContent='Kantor belum bisa dimuat: '+e.message}
 }
 
 $('#who').onclick=()=>{
@@ -140,7 +195,7 @@ $('#who').onclick=()=>{
 };
 $('#cancel').onclick=()=>$('#dlg').close();
 $('#login').onsubmit=()=>{key=$('#k').value;sessionStorage.setItem('ok',key);$('#k').value='';last='';poll()};
-poll();setInterval(poll,4000);
+fit();addEventListener('resize',fit);poll();setInterval(poll,4000);
 </script>
 </body>
 </html>
