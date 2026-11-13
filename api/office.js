@@ -1,7 +1,11 @@
 const crypto = require('crypto');
 
-const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const find = (re) => {
+  const k = Object.keys(process.env).find((n) => re.test(n));
+  return k && process.env[k];
+};
+const REDIS_URL = find(/(KV_REST_API_URL|UPSTASH_REDIS_REST_URL)$/);
+const REDIS_TOKEN = find(/(KV_REST_API_TOKEN|UPSTASH_REDIS_REST_TOKEN)$/);
 const SLOTS = 5;
 
 const redis = async (cmd) => {
@@ -46,6 +50,9 @@ async function askAI(room, task) {
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
+  if (!REDIS_URL || !REDIS_TOKEN) {
+    return res.status(500).json({ error: 'Database belum terhubung (variabel KV_REST_API_URL / KV_REST_API_TOKEN tidak ditemukan). Hubungkan Upstash Redis di tab Storage, lalu Redeploy.' });
+  }
   const owner = !!process.env.OWNER_KEY && same(req.headers['x-owner-key'] || '', process.env.OWNER_KEY);
   try {
     const st = await load();
