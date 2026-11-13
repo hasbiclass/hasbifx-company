@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kantor AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--floor:#eef2fa;--panel:#fff;--wood:#d9a66b;--wood2:#b9854a;--blue:#2f5bd8;--navy:#1b2547;--skin:#f0b48a;--leaf:#4f9a5b;--mute:#66719a;--line:#dde4f4}
+*{box-sizing:border-box}
+body{margin:0;font-family:Fredoka,system-ui,sans-serif;background:var(--floor);color:var(--navy);padding:16px;max-width:1100px;margin-inline:auto}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+h1{font-size:1.5rem;margin:0}h2{font-size:1.1rem;margin:0}p{margin:2px 0;color:var(--mute)}
+button{font:inherit;border:0;border-radius:12px;background:var(--blue);color:#fff;padding:8px 14px;cursor:pointer}
+button.ghost{background:#e6ecfb;color:var(--navy)}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #9db8ff;outline-offset:2px}
+.boss{display:flex;gap:22px;align-items:center;background:var(--panel);border-radius:22px;padding:18px 22px;box-shadow:0 8px 0 var(--line);margin-bottom:18px}
+.rooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px}
+.room{background:var(--panel);border-radius:22px;padding:14px;box-shadow:0 8px 0 var(--line)}
+.stage{position:relative;height:150px;border-radius:14px;background:linear-gradient(#dfe7f7 0 58%,#f7f9fe 58%);overflow:hidden}
+.stage:before{content:"";position:absolute;right:12px;bottom:22px;width:18px;height:24px;background:var(--leaf);border-radius:50% 50% 4px 4px;box-shadow:0 16px 0 -5px #cfd5e6}
+.desk{position:absolute;left:70px;bottom:22px;width:160px;height:12px;background:var(--wood);border-radius:4px;box-shadow:0 12px 0 -3px var(--wood2)}
+.screen{position:absolute;left:112px;bottom:34px;width:112px;height:60px;background:var(--navy);border-radius:6px;color:#8fb4ff;font:9px/1.35 ui-monospace,monospace;padding:6px;overflow:hidden}
+.empty{position:absolute;left:14px;top:14px;color:var(--mute);font-size:.85rem}
+.person{position:absolute;left:30px;bottom:24px;width:44px}
+.head{width:44px;height:44px;background:var(--skin);border-radius:6px;position:relative}
+.head:before,.head:after{content:"";position:absolute;top:20px;width:5px;height:7px;background:var(--navy);border-radius:2px}
+.head:before{left:10px}.head:after{right:10px}
+.body{width:36px;height:30px;margin:2px auto 0;background:var(--blue);border-radius:6px 6px 0 0}
+.hat{position:absolute;left:-3px;top:-10px;width:50px;height:14px;border-radius:7px 7px 3px 3px;background:var(--blue)}
+[data-s="1"] .hat{background:var(--navy);height:12px;border-radius:20px 20px 4px 4px}
+[data-s="2"] .hat{background:#8b8f99}
+[data-s="3"] .hat{border-radius:4px 4px 0 0}
+[data-s="3"] .head{background-image:linear-gradient(#111,#111);background-size:36px 9px;background-repeat:no-repeat;background-position:4px 17px}
+[data-s="4"] .hat{background:#fff;box-shadow:0 0 0 1px #d6dcef}
+.big{position:relative;flex:none;margin-top:44px}
+.wiz{position:absolute;left:-4px;top:-42px;border-left:26px solid transparent;border-right:26px solid transparent;border-bottom:46px solid var(--blue)}
+.working .head{animation:type .5s steps(2) infinite}
+@keyframes type{50%{transform:translateY(2px)}}
+.info{display:flex;justify-content:space-between;align-items:center;margin:12px 2px 6px;gap:8px}
+.chip{font-size:.8rem;padding:3px 10px;border-radius:99px;background:#e9edf8;color:var(--mute);white-space:nowrap}
+.working+.info .chip{background:#dff5e4;color:#23703a}
+details{margin:6px 2px;color:var(--mute);font-size:.9rem}summary{cursor:pointer}
+.log{margin:8px 0;padding:8px 10px;background:#f4f7fd;border-radius:10px;white-space:pre-wrap;word-break:break-word;color:var(--navy);font-size:.85rem;max-height:200px;overflow:auto}
+.ctl{display:flex;flex-direction:column;gap:6px;margin-top:8px}.ctl .row{display:flex;gap:6px}
+input,textarea{font:inherit;width:100%;padding:8px 10px;border:2px solid var(--line);border-radius:10px;color:var(--navy)}
+dialog{border:0;border-radius:18px;padding:20px;box-shadow:0 10px 40px #1b254733}
+@media (prefers-reduced-motion:reduce){.working .head{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Kantor AI</h1>
+  <button id="who" class="ghost">Masuk sebagai bos</button>
+</header>
+
+<section class="boss">
+  <div class="person big" data-s="0"><div class="wiz"></div><div class="head"></div><div class="body"></div></div>
+  <div><h2>Ruang bos</h2><p id="hint">Memuat kantor…</p></div>
+</section>
+
+<main class="rooms" id="rooms" aria-live="polite"></main>
+
+<dialog id="dlg">
+  <form method="dialog" id="login">
+    <h2>Masuk sebagai bos</h2>
+    <p>Masukkan kunci bos yang kamu atur di Vercel.</p>
+    <input id="k" type="password" placeholder="Kunci bos" autocomplete="current-password" required>
+    <div class="ctl"><div class="row"><button>Masuk</button><button type="button" class="ghost" id="cancel">Batal</button></div></div>
+  </form>
+</dialog>
+
+<script>
+const $=s=>document.querySelector(s);
+const h=(t,a={},...k)=>{const e=document.createElement(t);for(const[x,v]of Object.entries(a))(x in e)?e[x]=v:e.setAttribute(x,v);e.append(...k.flat().filter(v=>v!=null&&v!==false));return e};
+let key=sessionStorage.getItem('ok')||'',owner=false,last='';
+
+const api=body=>fetch('/api/office',{method:body?'POST':'GET',headers:{'content-type':'application/json','x-owner-key':key},body:body&&JSON.stringify(body)})
+  .then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Terjadi kesalahan');return j});
+
+const person=i=>h('div',{className:'person','data-s':i%5},h('div',{className:'head'},h('i',{className:'hat'})),h('div',{className:'body'}));
+const screenText=r=>r.status==='working'?'> '+r.task.slice(0,90)+'…':(r.log[0]?r.log[0].result.slice(0,120):'menunggu tugas');
+
+function room(r,i,open){
+  const working=r&&r.status==='working';
+  const stage=h('div',{className:'stage'+(working?' working':'')},
+    h('div',{className:'desk'}),
+    h('div',{className:'screen'},r?screenText(r):''),
+    r?person(i):h('div',{className:'empty'},'Ruangan kosong'));
+  const info=h('div',{className:'info'},
+    h('div',{},h('h2',{},r?r.name:'Ruang '+(i+1)),h('p',{},r?r.role:'Belum ada karyawan')),
+    r&&h('span',{className:'chip'},working?'Sedang bekerja':'Santai'));
+  const el=h('article',{className:'room'},stage,info);
+  if(r&&r.log.length){
+    const d=h('details',{open,'data-k':i},h('summary',{},'Riwayat kerja'),
+      r.log.map(l=>h('div',{className:'log'},'Tugas: '+l.task+'\n\n'+l.result)));
+    el.append(d);
+  }
+  if(!owner)return el;
+  if(!r){
+    el.append(h('div',{className:'ctl'},
+      h('input',{name:'n'+i,placeholder:'Nama karyawan',maxLength:24}),
+      h('input',{name:'r'+i,placeholder:'Peran (mis. Penulis konten)',maxLength:40}),
+      h('textarea',{name:'p'+i,rows:2,placeholder:'Instruksi kerja untuk AI ini',maxLength:600}),
+      h('button',{onclick:()=>act({action:'hire',slot:i,name:$(`[name=n${i}]`).value,role:$(`[name=r${i}]`).value,prompt:$(`[name=p${i}]`).value})},'Rekrut')));
+  }else{
+    el.append(h('div',{className:'ctl'},
+      h('textarea',{name:'t'+i,rows:2,placeholder:'Tugas untuk '+r.name,maxLength:800}),
+      h('div',{className:'row'},
+        h('button',{disabled:working,onclick:()=>{const t=$(`[name=t${i}]`);act({action:'task',slot:i,task:t.value});t.value=''}},'Kerjakan'),
+        h('button',{className:'ghost',onclick:()=>confirm('Berhentikan '+r.name+'?')&&act({action:'fire',slot:i})},'Berhentikan'))));
+  }
+  return el;
+}
+
+function act(body){
+  const p=api(body).catch(e=>alert(e.message));
+  setTimeout(poll,600);p.then(poll);
+}
+
+function draw(s){
+  const keep={},open=new Set(),focus=document.activeElement&&document.activeElement.name;
+  document.querySelectorAll('#rooms [name]').forEach(i=>keep[i.name]=i.value);
+  document.querySelectorAll('details[open]').forEach(d=>open.add(d.dataset.k));
+  $('#rooms').replaceChildren(...s.rooms.map((r,i)=>room(r,i,open.has(String(i)))));
+  for(const[n,v]of Object.entries(keep)){const i=document.querySelector(`[name="${n}"]`);if(i)i.value=v}
+  if(focus){const f=document.querySelector(`[name="${focus}"]`);f&&f.focus()}
+  const on=s.rooms.filter(r=>r&&r.status==='working').length,n=s.rooms.filter(Boolean).length;
+  $('#hint').textContent=n+' karyawan di kantor, '+on+' sedang bekerja'+(owner?'. Kamu masuk sebagai bos.':'. Kamu melihat sebagai tamu.');
+  $('#who').textContent=owner?'Keluar':'Masuk sebagai bos';
+}
+
+async function poll(){
+  try{const s=await api();if(key&&!s.owner){key='';sessionStorage.removeItem('ok')}owner=s.owner;
+    const j=JSON.stringify(s);if(j!==last){last=j;draw(s)}}catch(e){$('#hint').textContent='Kantor belum bisa dimuat: '+e.message}
+}
+
+$('#who').onclick=()=>{
+  if(owner){key='';owner=false;sessionStorage.removeItem('ok');last='';poll()}else $('#dlg').showModal();
+};
+$('#cancel').onclick=()=>$('#dlg').close();
+$('#login').onsubmit=()=>{key=$('#k').value;sessionStorage.setItem('ok',key);$('#k').value='';last='';poll()};
+poll();setInterval(poll,4000);
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "functions": {
+    "api/office.js": { "maxDuration": 60 }
+  }
+}
